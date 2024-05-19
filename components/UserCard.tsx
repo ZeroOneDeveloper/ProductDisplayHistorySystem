@@ -45,11 +45,13 @@ const UserCard: React.FC<{
           <h1 className="font-light">ID</h1>
           <h2 className="font-bold text-xl">{name}</h2>
         </div>
-        <div>
-          <h1 className="font-light">Public Key</h1>
-          <h2 className="font-bold text-xl text-ellipsis overflow-hidden">
-            {publicKey}
-          </h2>
+        <div className="my-1">
+          <textarea
+            rows={4}
+            className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            value={publicKey}
+            disabled
+          ></textarea>
         </div>
         <div>
           <button
@@ -152,8 +154,8 @@ const UserCard: React.FC<{
                               id: index,
                             }),
                           });
-                          setIndex(index + 1);
                           close();
+                          setIndex(index + 1);
                           router.refresh();
                         }}
                       >

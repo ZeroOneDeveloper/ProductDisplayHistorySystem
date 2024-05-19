@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 
 import User from "@database/models/User";
 import IUser from "@database/models/types/IUser";
-import UserCard from "@/components/UserCard";
+import UserCard from "@components/UserCard";
 
 const Page: React.FC = async () => {
   if (mongoose.connection.readyState === 0) {
@@ -13,7 +13,7 @@ const Page: React.FC = async () => {
   const users: IUser[] = await User.find();
   return (
     <div className="min-h-screen">
-      <div className="flex flex-wrap gap-4 p-8">
+      <div className="flex flex-wrap gap-4 py-8 w-[90%] mx-auto">
         {users.map((user: IUser, index) => (
           <UserCard
             key={index}
