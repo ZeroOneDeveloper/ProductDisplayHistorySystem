@@ -69,6 +69,19 @@ const Page: React.FC = () => {
   }, [params.id, router]);
 
   useEffect(() => {
+    fetch("/api/transaction", {
+      method: "GET",
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setTransactions(data);
+      })
+      .catch(() => {
+        router.push("/_not-found");
+      });
+  }, [params.id, router]);
+
+  useEffect(() => {
     fetch("/api/block", {
       method: "GET",
     })
