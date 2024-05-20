@@ -13,6 +13,7 @@ import {
   TransitionChild,
 } from "@headlessui/react";
 
+import IBlock from "@database/models/types/IBlock";
 import ITransaction from "@database/models/types/ITransaction";
 
 const Page: React.FC = () => {
@@ -30,7 +31,7 @@ const Page: React.FC = () => {
   const [transactions, setTransactions] = React.useState<Array<ITransaction>>(
     [],
   );
-  const [previousBlock, setPreviousBlock] = React.useState<object>([]);
+  const [blocks, setBlocks] = React.useState<IBlock[]>([]);
   const [nonce, setNonce] = React.useState<number>(0);
   const [hash, setHash] = React.useState<string>("");
   const [difficulty, setDifficulty] = React.useState<number>(2);
@@ -86,8 +87,8 @@ const Page: React.FC = () => {
       method: "GET",
     })
       .then((res) => res.json())
-      .then((data) => {
-        setPreviousBlock(data);
+      .then((data: IBlock[]) => {
+        setBlocks(data);
       })
       .catch(() => {
         router.push("/_not-found");
@@ -95,14 +96,10 @@ const Page: React.FC = () => {
   }, [params.id, router]);
 
   useEffect(() => {
-    const previousHash = previousBlock
+    const previousHash = blocks[blocks.length - 1]
       ? crypto
           .createHash("SHA256")
-          .update(
-            JSON.stringify({
-              previousBlock,
-            }),
-          )
+          .update(JSON.stringify(blocks[blocks.length - 1]))
           .digest("hex")
       : "";
     setHash(
@@ -113,11 +110,12 @@ const Page: React.FC = () => {
             previousHash,
             transactions,
             nonce,
+            difficulty,
           }),
         )
         .digest("hex"),
     );
-  }, [nonce, previousBlock, transactions]);
+  }, [nonce, blocks, transactions]);
 
   useEffect(() => {
     let intervalId: string | number | NodeJS.Timeout | undefined;
@@ -213,6 +211,7 @@ const Page: React.FC = () => {
             채굴
           </button>
         </div>
+        <div className="mt-2 flex gap-2"></div>
       </div>
       <Transition appear show={tradeIsOpen} as={Fragment}>
         <Dialog as="div" className="relative z-10" onClose={TradeClose}>
@@ -417,67 +416,91 @@ const Page: React.FC = () => {
                       ))}
                     </div>
                   </div>
-                  <div className="mt-4 w-2/3 mx-auto">
-                    <label className="block text-xl font-bold text-gray-700">
-                      Nonce
-                    </label>
-                    <input
-                      type="number"
-                      className="w-full mt-1 border-gray-300 border-b-2 transition duration-500 focus:ring-blue-500 focus:border-blue-500 focus:outline-none sm:text-sm"
-                      value={nonce}
-                      onChange={(e) => {
-                        if (parseInt(e.target.value) >= 0) {
-                          setNonce(parseInt(e.target.value));
-                        }
-                      }}
-                    />
-                  </div>
-                  <div className="mt-4 w-2/3 mx-auto">
-                    <label className="block text-xl font-bold text-gray-700">
-                      Difficulty
-                    </label>
-                    <input
-                      type="number"
-                      className="w-full mt-1 border-gray-300 border-b-2 transition duration-500 focus:ring-blue-500 focus:border-blue-500 focus:outline-none sm:text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      value={difficulty}
-                      onChange={(e) => {
-                        if (parseInt(e.target.value) >= 0) {
-                          setDifficulty(parseInt(e.target.value));
-                        }
-                      }}
-                    />
-                  </div>
-                  <div className="mt-4 w-2/3 mx-auto">
-                    <label className="block text-xl font-bold text-gray-700">
-                      Hash
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full mt-1 border-gray-300 border-b-2 transition duration-500 focus:ring-blue-500 focus:border-blue-500 focus:outline-none sm:text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      value={hash}
-                    />
-                  </div>
-                  <div className="mt-4 w-2/3 mx-auto flex gap-2">
-                    <button
-                      className="px-4 py-2 rounded-xl bg-red-400 text-white"
-                      onClick={() => setIsRunning(true)}
-                    >
-                      채굴하기
-                    </button>
-                    {hash.startsWith("0".repeat(difficulty)) && (
-                      <button
-                        className="px-4 py-2 rounded-xl bg-blue-400 text-white"
-                        onClick={async () => {
-                          await fetch("/api/block", {
-                            method: "POST",
-                            body: JSON.stringify({}),
-                          });
-                        }}
-                      >
-                        블록 업로드
-                      </button>
-                    )}
-                  </div>
+                  {transactions.length ? (
+                    <>
+                      <div className="mt-4 w-2/3 mx-auto">
+                        <label className="block text-xl font-bold text-gray-700">
+                          Nonce
+                        </label>
+                        <input
+                          type="number"
+                          className="w-full mt-1 border-gray-300 border-b-2 transition duration-500 focus:ring-blue-500 focus:border-blue-500 focus:outline-none sm:text-sm"
+                          value={nonce}
+                          onChange={(e) => {
+                            if (parseInt(e.target.value) >= 0) {
+                              setNonce(parseInt(e.target.value));
+                            }
+                          }}
+                        />
+                      </div>
+                      <div className="mt-4 w-2/3 mx-auto">
+                        <label className="block text-xl font-bold text-gray-700">
+                          Difficulty
+                        </label>
+                        <input
+                          type="number"
+                          className="w-full mt-1 border-gray-300 border-b-2 transition duration-500 focus:ring-blue-500 focus:border-blue-500 focus:outline-none sm:text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          value={difficulty}
+                          onChange={(e) => {
+                            if (parseInt(e.target.value) >= 0) {
+                              setDifficulty(parseInt(e.target.value));
+                            }
+                          }}
+                        />
+                      </div>
+                      <div className="mt-4 w-2/3 mx-auto">
+                        <label className="block text-xl font-bold text-gray-700">
+                          Hash
+                        </label>
+                        <input
+                          type="text"
+                          className="w-full mt-1 border-gray-300 border-b-2 transition duration-500 focus:ring-blue-500 focus:border-blue-500 focus:outline-none sm:text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          value={hash}
+                        />
+                      </div>
+                      <div className="mt-4 w-2/3 mx-auto flex gap-2">
+                        <button
+                          className="px-4 py-2 rounded-xl bg-red-400 text-white"
+                          onClick={() => setIsRunning(true)}
+                        >
+                          채굴하기
+                        </button>
+                        {hash.startsWith("0".repeat(difficulty)) && (
+                          <button
+                            className="px-4 py-2 rounded-xl bg-blue-400 text-white"
+                            onClick={async () => {
+                              await fetch("/api/block", {
+                                method: "POST",
+                                body: JSON.stringify({
+                                  previousHash: blocks[blocks.length - 1]
+                                    ? crypto
+                                        .createHash("SHA256")
+                                        .update(
+                                          JSON.stringify(
+                                            blocks[blocks.length - 1],
+                                          ),
+                                        )
+                                        .digest("hex")
+                                    : "",
+                                  transactions,
+                                  nonce,
+                                  difficulty,
+                                }),
+                              });
+                              setMineIsOpen(false);
+                              router.refresh();
+                            }}
+                          >
+                            블록 업로드
+                          </button>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <h1 className="text-center text-xl font-bold mt-2">
+                      작업증명할 거래가 없습니다.
+                    </h1>
+                  )}
                 </DialogPanel>
               </TransitionChild>
             </div>
