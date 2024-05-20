@@ -35,6 +35,7 @@ const Page: React.FC = () => {
   const [productName, setProductName] = React.useState<string>("");
   const [count, setCount] = React.useState<number>(0);
   const [message, setMessage] = React.useState<string>("");
+  const [warningMessage, setWarningMessage] = React.useState<string>("");
 
   const [transactions, setTransactions] = React.useState<Array<ITransaction>>(
     [],
@@ -123,14 +124,14 @@ const Page: React.FC = () => {
         )
         .digest("hex"),
     );
-  }, [nonce, blocks, transactions]);
+  }, [nonce, blocks, transactions, difficulty]);
 
   useEffect(() => {
     let intervalId: string | number | NodeJS.Timeout | undefined;
     if (isRunning) {
       intervalId = setInterval(() => {
         setNonce(nonce + 1);
-      }, 10);
+      }, 20);
     }
 
     return () => {
@@ -145,6 +146,45 @@ const Page: React.FC = () => {
       setIsRunning(false);
     }
   }, [hash, difficulty]);
+
+  useEffect(() => {
+    for (let i = 1; i < blocks.length; i++) {
+      if (
+        crypto
+          .createHash("SHA256")
+          .update(JSON.stringify(blocks[i - 1]))
+          .digest("hex") !== blocks[i].previousHash
+      ) {
+        setWarningMessage(
+          "블록 구조가 유효하지 않습니다. 새로고침하여 다시 설정하십시오.",
+        );
+        return;
+      }
+    }
+  }, [blocks]);
+
+  const changeBlockIdx = (currentIdx: number, newIdx: number) => {
+    if (
+      newIdx < 0 ||
+      newIdx >= blocks.length ||
+      currentIdx < 0 ||
+      currentIdx >= blocks.length
+    ) {
+      console.log("Invalid index");
+      return;
+    }
+
+    // 새 블록 배열 생성 (깊은 복사)
+    let newBlocks = [...blocks];
+
+    // 블록 교환
+    const temp = newBlocks[currentIdx];
+    newBlocks[currentIdx] = newBlocks[newIdx];
+    newBlocks[newIdx] = temp;
+
+    // 상태 업데이트
+    setBlocks(newBlocks);
+  };
 
   return (
     <div className="min-h-screen md:px-36 p-16">
@@ -225,9 +265,19 @@ const Page: React.FC = () => {
               className="bg-gray-300 rounded-xl px-6 py-8 whitespace-nowrap max-w-md w-full grid grid-cols-2"
               key={blockIdx}
             >
-              <div>
+              <div className="">
                 <h2 className="text-xl font-light">Index</h2>
-                <h1 className="text-2xl font-bold">{block.index}</h1>
+                <input
+                  type="number"
+                  className="text-2xl font-bold w-2/3 bg-transparent border-b-2 focus:outline-none"
+                  value={block.index}
+                  onChange={(e) => {
+                    const newIdx = parseInt(e.target.value, 10);
+                    if (!isNaN(newIdx) && newIdx !== blockIdx) {
+                      changeBlockIdx(blockIdx, newIdx);
+                    }
+                  }}
+                ></input>
               </div>
               <div>
                 <h2 className="text-xl font-light">Nonce</h2>
@@ -238,11 +288,11 @@ const Page: React.FC = () => {
                 <h1 className="text-2xl font-bold">{block.difficulty}</h1>
               </div>
               <div>
-                <h2 className="text-xl font-light">Transactions</h2>
+                <h2 className="text-xl font-light w-1/2">Transactions</h2>
                 {block.transactions.map(
                   (transaction: ITransaction, transactionIdx) => (
                     <div className="flex gap-2" key={transactionIdx}>
-                      <h1>
+                      <h1 className="text-center">
                         {transaction.senderId !== undefined
                           ? transaction.senderId
                           : "Initial"}
@@ -258,6 +308,9 @@ const Page: React.FC = () => {
               </div>
             </div>
           ))}
+        </div>
+        <div>
+          <h1>{warningMessage}</h1>
         </div>
       </div>
       <Transition appear show={tradeIsOpen} as={Fragment}>
@@ -319,6 +372,9 @@ const Page: React.FC = () => {
                             } else {
                               setMessage("");
                             }
+                          })
+                          .catch(() => {
+                            setMessage("아이디를 확인해주세요.");
                           });
                       }}
                     />
@@ -534,8 +590,8 @@ const Page: React.FC = () => {
                                   difficulty,
                                 }),
                               });
-                              MineClose();
                               router.refresh();
+                              MineClose();
                             }}
                           >
                             블록 업로드

@@ -8,6 +8,10 @@ const BlockSchema = new Schema(
       type: Boolean,
       required: false,
     },
+    previousHash: {
+      type: String,
+      required: false,
+    },
     index: {
       type: Number,
       required: true,
