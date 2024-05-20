@@ -4,7 +4,15 @@ import React, { Fragment, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 import crypto from "crypto";
-import { Copy, HardHat, Pickaxe, Receipt, Truck, User } from "lucide-react";
+import {
+  ArrowRight,
+  Copy,
+  HardHat,
+  Pickaxe,
+  Receipt,
+  Truck,
+  User,
+} from "lucide-react";
 import {
   Dialog,
   DialogPanel,
@@ -211,7 +219,46 @@ const Page: React.FC = () => {
             채굴
           </button>
         </div>
-        <div className="mt-2 flex gap-2"></div>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {blocks.map((block: IBlock, blockIdx) => (
+            <div
+              className="bg-gray-300 rounded-xl px-6 py-8 whitespace-nowrap max-w-md w-full grid grid-cols-2"
+              key={blockIdx}
+            >
+              <div>
+                <h2 className="text-xl font-light">Index</h2>
+                <h1 className="text-2xl font-bold">{block.index}</h1>
+              </div>
+              <div>
+                <h2 className="text-xl font-light">Nonce</h2>
+                <h1 className="text-2xl font-bold">{block.nonce}</h1>
+              </div>
+              <div>
+                <h2 className="text-xl font-light">Difficulty</h2>
+                <h1 className="text-2xl font-bold">{block.difficulty}</h1>
+              </div>
+              <div>
+                <h2 className="text-xl font-light">Transactions</h2>
+                {block.transactions.map(
+                  (transaction: ITransaction, transactionIdx) => (
+                    <div className="flex gap-2" key={transactionIdx}>
+                      <h1>
+                        {transaction.senderId !== undefined
+                          ? transaction.senderId
+                          : "Initial"}
+                      </h1>
+                      <ArrowRight />
+                      <h1>{transaction.targetId}</h1>
+                      <h1>
+                        {transaction.productName} ( {transaction.count} )
+                      </h1>
+                    </div>
+                  ),
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
       <Transition appear show={tradeIsOpen} as={Fragment}>
         <Dialog as="div" className="relative z-10" onClose={TradeClose}>
@@ -331,18 +378,18 @@ const Page: React.FC = () => {
                             count,
                           }),
                         });
-                        fetch("/api/transaction", {
-                          method: "GET",
-                        })
-                          .then((res) => res.json())
-                          .then((data) => {
-                            setTransactions(data);
-                          })
-                          .catch(() => {
-                            router.push("/_not-found");
-                          });
-                        TradeClose();
-                        router.refresh();
+                        try {
+                          const getTransactions = await (
+                            await fetch("/api/transaction", {
+                              method: "GET",
+                            })
+                          ).json();
+                          setTransactions(getTransactions);
+                          TradeClose();
+                          router.refresh();
+                        } catch {
+                          router.push("/_not-found");
+                        }
                       }}
                     >
                       생성
@@ -487,7 +534,7 @@ const Page: React.FC = () => {
                                   difficulty,
                                 }),
                               });
-                              setMineIsOpen(false);
+                              MineClose();
                               router.refresh();
                             }}
                           >
