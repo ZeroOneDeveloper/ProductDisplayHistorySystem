@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "상품표시이력제",
+  title: "제품표시이력제",
   description: "Created with blockchain tech.",
 };
 
